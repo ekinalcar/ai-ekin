@@ -1,4 +1,4 @@
-import { ekinProfile } from "../data/ekinProfile"
+import { ekinProfile } from "../data/ekinProfile.js"
 
 type RateEntry = {
   count: number
