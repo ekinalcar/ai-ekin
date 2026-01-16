@@ -18,7 +18,7 @@ export default async function handler(req: any, res: any) {
   const forwardedFor = req.headers["x-forwarded-for"]
   const ip = Array.isArray(forwardedFor)
     ? forwardedFor[0]
-    : (forwardedFor?.split(",")[0] ?? req.socket?.remoteAddress ?? "unknown")
+    : forwardedFor?.split(",")[0] ?? req.socket?.remoteAddress ?? "unknown"
 
   const now = Date.now()
   const entry = rateStore.get(ip)
@@ -41,6 +41,15 @@ export default async function handler(req: any, res: any) {
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body
     const messages = Array.isArray(body?.messages) ? body.messages : []
+    const safeMessages = messages
+      .filter(
+        (message: { role?: string }) =>
+          message?.role === "user" || message?.role === "assistant"
+      )
+      .map((message: { role: string; content: string }) => ({
+        role: message.role,
+        content: message.content,
+      }))
 
     const systemPrompt = `
 You are "AI Ekin", the voice of Ekin Alcar on his personal website.
@@ -55,13 +64,7 @@ ${ekinProfile}
       model: "gpt-4o-mini",
       temperature: 0.6,
       max_tokens: 450,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages.map((message: { role: string; content: string }) => ({
-          role: message.role,
-          content: message.content,
-        })),
-      ],
+      messages: [{ role: "system", content: systemPrompt }, ...safeMessages],
     }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -75,7 +78,8 @@ ${ekinProfile}
 
     if (!response.ok) {
       const errorText = await response.text()
-      res.status(500).json({ error: errorText })
+      console.error("OpenAI API error:", errorText)
+      res.status(500).json({ error: "Upstream API error" })
       return
     }
 
