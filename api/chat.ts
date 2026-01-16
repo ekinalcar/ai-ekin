@@ -86,7 +86,6 @@ ${ekinProfile}
     const data = await response.json()
     const reply = data?.choices?.[0]?.message?.content ?? ""
     res.status(200).json({ reply })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     res.status(500).json({ error: error?.message ?? "Unexpected server error" })
   }

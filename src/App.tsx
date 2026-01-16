@@ -75,7 +75,7 @@ function App() {
     }
 
     setError(null)
-    const nextMessages = [...messages, { role: "user", content }]
+    const nextMessages: ChatMessage[] = [...messages, { role: "user", content }]
     setMessages(nextMessages)
     setInput("")
     setIsLoading(true)
@@ -94,19 +94,20 @@ function App() {
 
       const data = (await response.json()) as { reply?: string }
       const reply = data.reply?.trim() || "No response yet. Try again?"
-      setMessages([...nextMessages, { role: "assistant", content: reply }])
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: reply,
+      }
+      setMessages([...nextMessages, assistantMessage])
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Something went wrong."
       setError(message)
-      setMessages([
-        ...nextMessages,
-        {
-          role: "assistant",
-          content:
-            "I ran into a snag reaching the model. Try again in a moment.",
-        },
-      ])
+      const fallbackMessage: ChatMessage = {
+        role: "assistant",
+        content: "I ran into a snag reaching the model. Try again in a moment.",
+      }
+      setMessages([...nextMessages, fallbackMessage])
     } finally {
       setIsLoading(false)
     }
